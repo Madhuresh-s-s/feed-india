@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,10 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Heart, LogOut, Plus, MapPin, Clock, Package, Utensils } from "lucide-react";
+import { Heart, LogOut, Plus, MapPin, Clock, Package, Utensils, Home, HandHeart, Search, Phone, IndianRupee, Menu, X } from "lucide-react";
 
 interface Donation {
   id: string;
+  donationType: string;
   foodItem: string;
   quantity: string;
   location: string;
@@ -19,11 +20,26 @@ interface Donation {
   createdAt: Date;
 }
 
+const navLinks = [
+  { name: "Home", path: "/", icon: Home },
+  { name: "Donate", path: "/donate", icon: HandHeart },
+  { name: "Track Donation", path: "/track", icon: Search },
+  { name: "Contact", path: "/contact", icon: Phone },
+];
+
+const donationTypes = [
+  { value: "food", label: "Food Items", icon: Utensils },
+  { value: "monetary", label: "Monetary", icon: IndianRupee },
+  { value: "supplies", label: "Supplies & Essentials", icon: Package },
+];
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [donations, setDonations] = useState<Donation[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [formData, setFormData] = useState({
+    donationType: "",
     foodItem: "",
     quantity: "",
     location: "",
@@ -46,7 +62,7 @@ const Dashboard = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.foodItem || !formData.quantity || !formData.location || !formData.bestBefore) {
+    if (!formData.donationType || !formData.foodItem || !formData.quantity || !formData.location || !formData.bestBefore) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
@@ -65,7 +81,7 @@ const Dashboard = () => {
     };
 
     setDonations([newDonation, ...donations]);
-    setFormData({ foodItem: "", quantity: "", location: "", bestBefore: "", notes: "" });
+    setFormData({ donationType: "", foodItem: "", quantity: "", location: "", bestBefore: "", notes: "" });
     
     toast({
       title: "Donation Posted!",
@@ -87,15 +103,59 @@ const Dashboard = () => {
               </div>
               <span className="font-bold text-xl text-primary-foreground">Donor Dashboard</span>
             </div>
-            <Button 
-              variant="ghost" 
-              className="text-primary-foreground hover:bg-primary-foreground/10"
-              onClick={handleLogout}
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-6">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  className="flex items-center gap-2 text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm font-medium"
+                >
+                  <link.icon className="w-4 h-4" />
+                  {link.name}
+                </Link>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                className="text-primary-foreground hover:bg-primary-foreground/10"
+                onClick={handleLogout}
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+              
+              {/* Mobile Menu Button */}
+              <button
+                className="md:hidden p-2 rounded-lg hover:bg-primary-foreground/10 transition-colors text-primary-foreground"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
           </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden py-4 border-t border-primary-foreground/20 animate-slide-up">
+              <div className="flex flex-col gap-2">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10 transition-colors"
+                  >
+                    <link.icon className="w-5 h-5" />
+                    {link.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
@@ -113,12 +173,40 @@ const Dashboard = () => {
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="space-y-2">
-                    <Label htmlFor="foodItem">Food Item / Type *</Label>
+                    <Label htmlFor="donationType">Donation Type *</Label>
+                    <Select 
+                      value={formData.donationType}
+                      onValueChange={(value) => setFormData({ ...formData, donationType: value })}
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder="Select donation type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {donationTypes.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            <span className="flex items-center gap-2">
+                              <type.icon className="w-4 h-4" />
+                              {type.label}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="foodItem">Item / Description *</Label>
                     <Input
                       id="foodItem"
                       name="foodItem"
                       type="text"
-                      placeholder="e.g., Cooked Rice, Fresh Vegetables"
+                      placeholder={
+                        formData.donationType === "monetary" 
+                          ? "e.g., ₹1,500, ₹15,000" 
+                          : formData.donationType === "supplies"
+                          ? "e.g., Blankets, Utensils, Water bottles"
+                          : "e.g., Cooked Rice, Fresh Vegetables"
+                      }
                       value={formData.foodItem}
                       onChange={handleInputChange}
                       className="h-11"
@@ -222,38 +310,46 @@ const Dashboard = () => {
               </Card>
             ) : (
               <div className="grid sm:grid-cols-2 gap-4">
-                {donations.map((donation, index) => (
-                  <Card 
-                    key={donation.id}
-                    className="border-0 shadow-card hover:shadow-elevated transition-all duration-300 animate-scale-in"
-                    style={{ animationDelay: `${index * 0.05}s` }}
-                  >
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="w-10 h-10 rounded-xl gradient-hero flex items-center justify-center">
-                          <Utensils className="w-5 h-5 text-primary-foreground" />
+                {donations.map((donation, index) => {
+                  const donationType = donationTypes.find(t => t.value === donation.donationType);
+                  const TypeIcon = donationType?.icon || Utensils;
+                  return (
+                    <Card 
+                      key={donation.id}
+                      className="border-0 shadow-card hover:shadow-elevated transition-all duration-300 animate-scale-in"
+                      style={{ animationDelay: `${index * 0.05}s` }}
+                    >
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="w-10 h-10 rounded-xl gradient-hero flex items-center justify-center">
+                            <TypeIcon className="w-5 h-5 text-primary-foreground" />
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                              {donation.id}
+                            </span>
+                            <span className="text-xs font-medium text-primary capitalize">
+                              {donationType?.label || donation.donationType}
+                            </span>
+                          </div>
                         </div>
-                        <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
-                          {donation.id}
-                        </span>
-                      </div>
 
-                      <h3 className="font-semibold text-lg mb-3">{donation.foodItem}</h3>
+                        <h3 className="font-semibold text-lg mb-3">{donation.foodItem}</h3>
 
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Package className="w-4 h-4" />
-                          <span>{donation.quantity}</span>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Package className="w-4 h-4" />
+                            <span>{donation.quantity}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <MapPin className="w-4 h-4" />
+                            <span>{donation.location}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Clock className="w-4 h-4" />
+                            <span>Best within {donation.bestBefore} hours</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <MapPin className="w-4 h-4" />
-                          <span>{donation.location}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Clock className="w-4 h-4" />
-                          <span>Best within {donation.bestBefore} hours</span>
-                        </div>
-                      </div>
 
                       {donation.notes && (
                         <p className="mt-4 pt-4 border-t border-border text-sm text-muted-foreground">
@@ -261,13 +357,14 @@ const Dashboard = () => {
                         </p>
                       )}
 
-                      <div className="mt-4 pt-4 border-t border-border flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-primary" />
-                        <span className="text-xs text-muted-foreground">Donor Location Preview</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        <div className="mt-4 pt-4 border-t border-border flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-primary" />
+                          <span className="text-xs text-muted-foreground">Donor Location Preview</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>
