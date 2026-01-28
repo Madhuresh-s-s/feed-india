@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -64,6 +65,7 @@ const userTypeConfig: Record<string, { icon: React.ElementType; color: string }>
 };
 
 const Admin = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -293,7 +295,11 @@ const Admin = () => {
                           const userType = userTypeConfig[user.type];
                           const TypeIcon = userType?.icon || User;
                           return (
-                            <TableRow key={user.id}>
+                            <TableRow 
+                              key={user.id} 
+                              className="cursor-pointer hover:bg-accent/50 transition-colors"
+                              onClick={() => navigate(`/admin/user/${user.id}`)}
+                            >
                               <TableCell className="font-mono text-sm">{user.id}</TableCell>
                               <TableCell className="font-medium">{user.name}</TableCell>
                               <TableCell className="text-muted-foreground">{user.email}</TableCell>

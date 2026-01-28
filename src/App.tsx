@@ -10,6 +10,7 @@ import Track from "./pages/Track";
 import Contact from "./pages/Contact";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
+import UserDetails from "./pages/UserDetails";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/contact" element={<Contact />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/user/:userId" element={<UserDetails />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
