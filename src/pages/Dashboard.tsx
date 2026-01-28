@@ -16,6 +16,9 @@ interface Donation {
   quantity: string;
   location: string;
   bestBefore: string;
+  amount: string;
+  paymentMethod: string;
+  purpose: string;
   notes: string;
   createdAt: Date;
 }
@@ -33,6 +36,21 @@ const donationTypes = [
   { value: "supplies", label: "Supplies & Essentials", icon: Package },
 ];
 
+const paymentMethods = [
+  { value: "upi", label: "UPI" },
+  { value: "bank", label: "Bank Transfer" },
+  { value: "card", label: "Credit/Debit Card" },
+  { value: "cash", label: "Cash" },
+];
+
+const donationPurposes = [
+  { value: "general", label: "General Fund" },
+  { value: "meals", label: "Daily Meals Program" },
+  { value: "fleet", label: "Distribution Fleet" },
+  { value: "training", label: "Volunteer Training" },
+  { value: "awareness", label: "Awareness Campaign" },
+];
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [donations, setDonations] = useState<Donation[]>([]);
@@ -44,6 +62,9 @@ const Dashboard = () => {
     quantity: "",
     location: "",
     bestBefore: "",
+    amount: "",
+    paymentMethod: "",
+    purpose: "",
     notes: "",
   });
 
@@ -62,13 +83,34 @@ const Dashboard = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.donationType || !formData.foodItem || !formData.quantity || !formData.location || !formData.bestBefore) {
+    // Validation based on donation type
+    if (!formData.donationType) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields.",
+        description: "Please select a donation type.",
         variant: "destructive",
       });
       return;
+    }
+
+    if (formData.donationType === "monetary") {
+      if (!formData.amount || !formData.paymentMethod || !formData.purpose) {
+        toast({
+          title: "Missing Information",
+          description: "Please fill in amount, payment method, and purpose.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else {
+      if (!formData.foodItem || !formData.quantity || !formData.location || !formData.bestBefore) {
+        toast({
+          title: "Missing Information",
+          description: "Please fill in all required fields.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -81,7 +123,17 @@ const Dashboard = () => {
     };
 
     setDonations([newDonation, ...donations]);
-    setFormData({ donationType: "", foodItem: "", quantity: "", location: "", bestBefore: "", notes: "" });
+    setFormData({ 
+      donationType: "", 
+      foodItem: "", 
+      quantity: "", 
+      location: "", 
+      bestBefore: "", 
+      amount: "",
+      paymentMethod: "",
+      purpose: "",
+      notes: "" 
+    });
     
     toast({
       title: "Donation Posted!",
@@ -194,91 +246,179 @@ const Dashboard = () => {
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="foodItem">Item / Description *</Label>
-                    <Input
-                      id="foodItem"
-                      name="foodItem"
-                      type="text"
-                      placeholder={
-                        formData.donationType === "monetary" 
-                          ? "e.g., ₹1,500, ₹15,000" 
-                          : formData.donationType === "supplies"
-                          ? "e.g., Blankets, Utensils, Water bottles"
-                          : "e.g., Cooked Rice, Fresh Vegetables"
-                      }
-                      value={formData.foodItem}
-                      onChange={handleInputChange}
-                      className="h-11"
-                    />
-                  </div>
+                  {/* Conditional Fields based on Donation Type */}
+                  {formData.donationType === "monetary" ? (
+                    <>
+                      {/* Monetary Donation Fields */}
+                      <div className="space-y-2">
+                        <Label htmlFor="amount">Amount (₹) *</Label>
+                        <Input
+                          id="amount"
+                          name="amount"
+                          type="text"
+                          placeholder="e.g., 1500, 15000, 30000"
+                          value={formData.amount}
+                          onChange={handleInputChange}
+                          className="h-11"
+                        />
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="quantity">Quantity *</Label>
-                    <Input
-                      id="quantity"
-                      name="quantity"
-                      type="text"
-                      placeholder="e.g., 10 plates, 5 kg"
-                      value={formData.quantity}
-                      onChange={handleInputChange}
-                      className="h-11"
-                    />
-                  </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="paymentMethod">Payment Method *</Label>
+                        <Select 
+                          value={formData.paymentMethod}
+                          onValueChange={(value) => setFormData({ ...formData, paymentMethod: value })}
+                        >
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Select payment method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {paymentMethods.map((method) => (
+                              <SelectItem key={method.value} value={method.value}>
+                                {method.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Pickup Location *</Label>
-                    <Input
-                      id="location"
-                      name="location"
-                      type="text"
-                      placeholder="Address or area name"
-                      value={formData.location}
-                      onChange={handleInputChange}
-                      className="h-11"
-                    />
-                  </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="purpose">Donation Purpose *</Label>
+                        <Select 
+                          value={formData.purpose}
+                          onValueChange={(value) => setFormData({ ...formData, purpose: value })}
+                        >
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Select purpose" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {donationPurposes.map((purpose) => (
+                              <SelectItem key={purpose.value} value={purpose.value}>
+                                {purpose.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  ) : formData.donationType ? (
+                    <>
+                      {/* Food / Supplies Donation Fields */}
+                      <div className="space-y-2">
+                        <Label htmlFor="foodItem">
+                          {formData.donationType === "supplies" ? "Item Description *" : "Food Item / Type *"}
+                        </Label>
+                        <Input
+                          id="foodItem"
+                          name="foodItem"
+                          type="text"
+                          placeholder={
+                            formData.donationType === "supplies"
+                              ? "e.g., Blankets, Utensils, Water bottles"
+                              : "e.g., Cooked Rice, Fresh Vegetables"
+                          }
+                          value={formData.foodItem}
+                          onChange={handleInputChange}
+                          className="h-11"
+                        />
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="bestBefore">Best Before *</Label>
-                    <Select 
-                      value={formData.bestBefore}
-                      onValueChange={(value) => setFormData({ ...formData, bestBefore: value })}
-                    >
-                      <SelectTrigger className="h-11">
-                        <SelectValue placeholder="Select time window" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="2">Within 2 hours</SelectItem>
-                        <SelectItem value="4">Within 4 hours</SelectItem>
-                        <SelectItem value="6">Within 6 hours</SelectItem>
-                        <SelectItem value="8">Within 8 hours</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="quantity">Quantity *</Label>
+                        <Input
+                          id="quantity"
+                          name="quantity"
+                          type="text"
+                          placeholder={
+                            formData.donationType === "supplies"
+                              ? "e.g., 20 blankets, 50 bottles"
+                              : "e.g., 10 plates, 5 kg"
+                          }
+                          value={formData.quantity}
+                          onChange={handleInputChange}
+                          className="h-11"
+                        />
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Additional Notes</Label>
-                    <Textarea
-                      id="notes"
-                      name="notes"
-                      placeholder="Any special instructions or details..."
-                      value={formData.notes}
-                      onChange={handleInputChange}
-                      className="min-h-[80px] resize-none"
-                    />
-                  </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="location">Pickup Location *</Label>
+                        <Input
+                          id="location"
+                          name="location"
+                          type="text"
+                          placeholder="Address or area name"
+                          value={formData.location}
+                          onChange={handleInputChange}
+                          className="h-11"
+                        />
+                      </div>
 
-                  <Button type="submit" className="w-full h-12" disabled={isSubmitting}>
+                      <div className="space-y-2">
+                        <Label htmlFor="bestBefore">
+                          {formData.donationType === "supplies" ? "Pickup Window *" : "Best Before *"}
+                        </Label>
+                        <Select 
+                          value={formData.bestBefore}
+                          onValueChange={(value) => setFormData({ ...formData, bestBefore: value })}
+                        >
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Select time window" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="2">Within 2 hours</SelectItem>
+                            <SelectItem value="4">Within 4 hours</SelectItem>
+                            <SelectItem value="6">Within 6 hours</SelectItem>
+                            <SelectItem value="8">Within 8 hours</SelectItem>
+                            <SelectItem value="24">Within 24 hours</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  ) : null}
+
+                  {/* Notes - always shown when type is selected */}
+                  {formData.donationType && (
+                    <div className="space-y-2">
+                      <Label htmlFor="notes">Additional Notes</Label>
+                      <Textarea
+                        id="notes"
+                        name="notes"
+                        placeholder={
+                          formData.donationType === "monetary"
+                            ? "Any message you'd like to share with us..."
+                            : "Any special instructions or details..."
+                        }
+                        value={formData.notes}
+                        onChange={handleInputChange}
+                        className="min-h-[80px] resize-none"
+                      />
+                    </div>
+                  )}
+
+                  <Button type="submit" className="w-full h-12" disabled={isSubmitting || !formData.donationType}>
                     {isSubmitting ? (
                       <span className="flex items-center gap-2">
                         <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                        Posting...
+                        Processing...
                       </span>
                     ) : (
                       <>
-                        <Utensils className="w-4 h-4 mr-2" />
-                        Post Donation
+                        {formData.donationType === "monetary" ? (
+                          <>
+                            <IndianRupee className="w-4 h-4 mr-2" />
+                            Submit Donation
+                          </>
+                        ) : formData.donationType === "supplies" ? (
+                          <>
+                            <Package className="w-4 h-4 mr-2" />
+                            Post Supplies Donation
+                          </>
+                        ) : (
+                          <>
+                            <Utensils className="w-4 h-4 mr-2" />
+                            Post Food Donation
+                          </>
+                        )}
                       </>
                     )}
                   </Button>
@@ -313,6 +453,10 @@ const Dashboard = () => {
                 {donations.map((donation, index) => {
                   const donationType = donationTypes.find(t => t.value === donation.donationType);
                   const TypeIcon = donationType?.icon || Utensils;
+                  const isMonetary = donation.donationType === "monetary";
+                  const purposeLabel = donationPurposes.find(p => p.value === donation.purpose)?.label;
+                  const paymentLabel = paymentMethods.find(p => p.value === donation.paymentMethod)?.label;
+                  
                   return (
                     <Card 
                       key={donation.id}
@@ -321,8 +465,8 @@ const Dashboard = () => {
                     >
                       <CardContent className="p-5">
                         <div className="flex items-start justify-between mb-4">
-                          <div className="w-10 h-10 rounded-xl gradient-hero flex items-center justify-center">
-                            <TypeIcon className="w-5 h-5 text-primary-foreground" />
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isMonetary ? 'bg-success/20' : 'gradient-hero'}`}>
+                            <TypeIcon className={`w-5 h-5 ${isMonetary ? 'text-success' : 'text-primary-foreground'}`} />
                           </div>
                           <div className="flex flex-col items-end gap-1">
                             <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
@@ -334,33 +478,54 @@ const Dashboard = () => {
                           </div>
                         </div>
 
-                        <h3 className="font-semibold text-lg mb-3">{donation.foodItem}</h3>
+                        {isMonetary ? (
+                          <>
+                            <h3 className="font-semibold text-2xl mb-3 text-success">₹{donation.amount}</h3>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <IndianRupee className="w-4 h-4" />
+                                <span>{paymentLabel || donation.paymentMethod}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Heart className="w-4 h-4" />
+                                <span>{purposeLabel || donation.purpose}</span>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <h3 className="font-semibold text-lg mb-3">{donation.foodItem}</h3>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Package className="w-4 h-4" />
+                                <span>{donation.quantity}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <MapPin className="w-4 h-4" />
+                                <span>{donation.location}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Clock className="w-4 h-4" />
+                                <span>
+                                  {donation.donationType === "supplies" ? "Pickup within" : "Best within"} {donation.bestBefore} hours
+                                </span>
+                              </div>
+                            </div>
+                          </>
+                        )}
 
-                        <div className="space-y-2 text-sm">
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Package className="w-4 h-4" />
-                            <span>{donation.quantity}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <MapPin className="w-4 h-4" />
-                            <span>{donation.location}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Clock className="w-4 h-4" />
-                            <span>Best within {donation.bestBefore} hours</span>
-                          </div>
-                        </div>
+                        {donation.notes && (
+                          <p className="mt-4 pt-4 border-t border-border text-sm text-muted-foreground">
+                            {donation.notes}
+                          </p>
+                        )}
 
-                      {donation.notes && (
-                        <p className="mt-4 pt-4 border-t border-border text-sm text-muted-foreground">
-                          {donation.notes}
-                        </p>
-                      )}
-
-                        <div className="mt-4 pt-4 border-t border-border flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-primary" />
-                          <span className="text-xs text-muted-foreground">Donor Location Preview</span>
-                        </div>
+                        {!isMonetary && (
+                          <div className="mt-4 pt-4 border-t border-border flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-primary" />
+                            <span className="text-xs text-muted-foreground">Donor Location Preview</span>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   );
